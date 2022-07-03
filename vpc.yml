@@ -1,0 +1,297 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Esther Ninyo Udacity template
+
+#------------------------
+#   PARAMETERS
+#------------------------
+Parameters:
+  EnvironmentName:
+    Description: Environment name for our resource
+    Type: String
+
+  VpcCIDR:
+    Description: CIDR block for vpc resource
+    Type: String
+  
+  PrivateSubnetCIDR1:     
+    Description: Private Subnet cidr 1
+    Type: String
+
+  PrivateSubnetCIDR2:
+    Description: Private subnet cidr 2
+    Type: String
+
+  publicSubnetCIDR1:
+    Description: Public subnet 1
+    Type: String
+
+  publicSubnetCIDR2:
+    Description: Public Subnet 2
+    Type: String
+
+  PublicRouteCIDR:
+    Description: Public Route DestinationCidrBlock
+    Type: String
+
+  PrivateRouteCIDR1:
+    Description: Private Route DestinationCidrBlock1
+    Type: String
+
+  PrivateRouteCIDR2:
+    Description: Private Route DestinationCidrBlock2
+    Type: String
+
+#-----------------------
+#     RESOURCES
+#-----------------------
+Resources:
+#------
+# VPC
+#-----
+  myVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 
+        Ref: VpcCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: 
+            Ref: EnvironmentName
+#------------------
+# INTERNET GATEWAY
+#------------------
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: 
+            Ref: EnvironmentName
+#-------------------
+# ATTACH GATEWAY
+#-------------------
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: 
+        Ref: myVPC
+      InternetGatewayId: !GetAtt InternetGateway.InternetGatewayId
+#----------------
+# SUBNET
+#----------------
+  subnetName1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      VpcId: 
+        Ref: myVPC 
+      CidrBlock: 
+        Ref: PrivateSubnetCIDR1
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} priv subnet (AZ2)
+
+  subnetName2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      VpcId: 
+        Ref: myVPC
+      CidrBlock: 
+        Ref: PrivateSubnetCIDR2
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} priv subnet (AZ2)
+
+  subnetNamePublic1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      VpcId: 
+        Ref: myVPC 
+      CidrBlock: 
+        Ref: publicSubnetCIDR1
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} pub subnet (AZ1)
+
+  subnetNamePublic2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      VpcId: 
+        Ref: myVPC 
+      CidrBlock: 
+        Ref: publicSubnetCIDR2
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} pub subnet (AZ2)
+
+  NatGateway1EIP:
+    Type: AWS::EC2::EIP
+    DependsOn: AttachGateway
+    Properties:
+      Domain: vpc
+
+  NatGateway2EIP:
+    Type: AWS::EC2::EIP
+    DependsOn: AttachGateway
+    Properties:
+      Domain: vpc
+
+  NatGateway1:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGateway1EIP.AllocationId
+      SubnetId: 
+        Ref: subnetNamePublic1
+
+  NatGateway2:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGateway2EIP.AllocationId
+      SubnetId: 
+        Ref: subnetNamePublic2
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: 
+        Ref: myVPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Public Routes
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: 
+        Ref: PublicRouteTable
+      DestinationCidrBlock: 
+        Ref: PublicRouteCIDR
+      GatewayId: !GetAtt InternetGateway.InternetGatewayId
+
+  PrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: 
+        Ref: myVPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-Private-Route1
+
+  PrivateRoute1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: 
+        Ref: PrivateRouteTable1
+      DestinationCidrBlock: 
+        Ref: PrivateRouteCIDR1
+      # GatewayId: !Ref NatGateway1
+      GatewayId: !GetAtt InternetGateway.InternetGatewayId
+
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: 
+        Ref: subnetName1
+      RouteTableId: 
+        Ref: PrivateRouteTable1
+  
+  PrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: 
+        Ref: myVPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-PrivateRouteTable2
+  
+
+  PrivateRoute2:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: 
+        Ref: PrivateRouteTable2
+      DestinationCidrBlock: 
+        Ref: PrivateRouteCIDR2
+      # GatewayId: !Ref NatGateway2
+      GatewayId: !GetAtt InternetGateway.InternetGatewayId
+
+
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: 
+        Ref: subnetName2
+      RouteTableId: 
+        Ref: PrivateRouteTable2
+
+#------------------------------
+# OUTPUT
+#------------------------------
+Outputs:
+  myVPC:
+    Description: Information about the vpc created
+    Value:  
+      Ref: myVPC
+    Export: 
+      Name: !Sub ${EnvironmentName}-VPCID
+
+  subnetName1:
+    Description: availability zone atttached to subnet 1
+    Value: 
+      Ref: subnetName1
+    Export:
+      Name: !Sub ${EnvironmentName}-priv-net-1
+
+  subnetName2:
+    Description: availability zone atttached to subnet 2
+    Value: 
+      Ref: subnetName1
+    Export:
+      Name: !Sub ${EnvironmentName}-priv-net-2
+
+  PrivateSubnets:
+    Description: A list of the private subnets
+    Value: !Join [ ",", [ !Ref subnetName1, !Ref subnetName2 ]]
+    Export:
+      Name: !Sub ${EnvironmentName}-PRIV-NETS
+  
+  subnetNamePublic1:
+    Description: availability zone atttached to subnet 2
+    Value: 
+      Ref: subnetNamePublic1
+    Export:
+      Name: !Sub ${EnvironmentName}-pub-net-1
+
+  subnetNamePublic2:
+    Description: availability zone atttached to subnet 2
+    Value: 
+      Ref: subnetNamePublic2
+    Export:
+      Name: !Sub ${EnvironmentName}-pub-net-2
+  
+  PrivateRoute1:
+    Description: Private route 1
+    Value: 
+      Ref: PrivateRoute1
+    Export:
+      Name: !Sub ${EnvironmentName}-priv-route-1
+  
+  PrivateRoute2:
+    Description: Private route 2
+    Value: 
+      Ref: PrivateRoute2
+    Export:
+      Name: !Sub ${EnvironmentName}-priv-route-2
+
+
+  
