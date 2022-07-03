@@ -68,7 +68,7 @@ Resources:
           systemctl start apache2.service
           cd /var/www/html
           echo "Udacity Demo Web Server Up and Running!" > index.html
-      ImageId: ami-08d4ac5b634553e16
+      ImageId: ami-0729e439b6769d6ab
       SecurityGroups: 
       - Ref: WebServerSecGrp
       InstanceType: t2.medium
@@ -85,8 +85,8 @@ Resources:
           !Sub "${EnvironmentName}-PRIV-NETS"
       LaunchConfigurationName:
         Ref: webAppLaunchConfig
-      MaxSize: '5'
-      MinSize: '3'
+      MaxSize: '6'
+      MinSize: '4'
       TargetGroupARNs:
       - Ref: WebAppTargetGroup
 
