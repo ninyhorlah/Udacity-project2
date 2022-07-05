@@ -1,6 +1,5 @@
 # DNS link to test
-![Test-link](serve-webap-1kyxdtd7fpm73-361444225.us-east-1.elb.amazonaws.com/)
-
+[Test-link](serve-webap-1kyxdtd7fpm73-361444225.us-east-1.elb.amazonaws.com/)
 
 # Deploy a High-Availability Web App using CloudFormation
 
