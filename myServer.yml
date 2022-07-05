@@ -38,7 +38,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties: 
       GroupDescription: Allow http access to host and SSH from local
-      GroupName: web-security-group
+      # GroupName: web-security-group
       VpcId: 
         Fn::ImportValue:
           !Sub ${EnvironmentName}-VPCID
@@ -85,7 +85,7 @@ Resources:
           !Sub "${EnvironmentName}-PRIV-NETS"
       LaunchConfigurationName:
         Ref: webAppLaunchConfig
-      MaxSize: '6'
+      MaxSize: '5'
       MinSize: '4'
       TargetGroupARNs:
       - Ref: WebAppTargetGroup
@@ -94,8 +94,8 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
       Subnets:
-      - Fn::ImportValue: !Sub "${EnvironmentName}-pub-net-1"
-      - Fn::ImportValue: !Sub "${EnvironmentName}-pub-net-2"
+        - Fn::ImportValue: !Sub "${EnvironmentName}-pub-net-1"
+        - Fn::ImportValue: !Sub "${EnvironmentName}-pub-net-2"
       SecurityGroups:
       - Ref: ELBSecGrp
 
