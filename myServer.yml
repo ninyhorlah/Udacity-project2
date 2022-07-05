@@ -67,8 +67,9 @@ Resources:
           apt-get install apache2 -y
           systemctl start apache2.service
           cd /var/www/html
-          echo "Udacity Demo Web Server Up and Running!" > index.html
+          echo "It works! Udagram, Udacity!" > index.html
       ImageId: ami-0729e439b6769d6ab
+      # KeyName: "jump-box-key"
       SecurityGroups: 
       - Ref: WebServerSecGrp
       InstanceType: t2.medium
